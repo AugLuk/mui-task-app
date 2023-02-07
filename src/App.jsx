@@ -1,5 +1,5 @@
-import { DragIndicator } from '@mui/icons-material'
-import { Box, Paper, Stack, Typography } from '@mui/material'
+import { DeleteOutline, DragIndicator } from '@mui/icons-material'
+import { AppBar, Box, Checkbox, Paper, Stack, Toolbar, Typography } from '@mui/material'
 import { useState } from 'react'
 import './App.css'
 import { v4 as uuidv4 } from 'uuid';
@@ -7,47 +7,88 @@ import { v4 as uuidv4 } from 'uuid';
 
 function App() {
   const [tasks, setTasks] = useState({
-    'task-1': { id: 'task-1', content: 'Take out the garbage'},
-    'task-2': { id: 'task-2', content: 'Watch my favorite show'},
-    'task-3': { id: 'task-3', content: 'Charge my phone'},
-    'task-4': { id: 'task-4', content: 'Cook dinner'},
+    '0': {
+      id: '0',
+      isComplete: false,
+      title: 'Take out the garbage',
+      description: '',
+      mouseIsOver: false
+    },
+    '1': {
+      id: '1',
+      isComplete: false,
+      title: 'Cook dinner',
+      description: 'Before 8 PM',
+      mouseIsOver: false
+    },
   })
 
-  const [taskOrder, setTaskOrder] = useState(['task-1', 'task-2', 'task-3', 'task-4', ])
+  const [taskOrder, setTaskOrder] = useState(['0', '1'])
 
-  const handleChange = event => {
-    console.log(event.target)
-    const value = event.target.innerText
-    const id = event.target.attributes.name.value;
-
+  const handleCheckboxChange = (event, taskId) => {
+    const {checked} = event.target
+    
     setTasks(prevTasks => {
-      const newTasks = {...prevTasks}
-      newTasks[id].content = value
-      return newTasks
+      const tasks = {...prevTasks}
+      tasks[taskId].isComplete = checked
+      return tasks
+    })
+  }
+
+  const handleMouseOver = (taskId, isOver) => {
+    setTasks(prevTasks => {
+      const tasks = {...prevTasks}
+      tasks[taskId].mouseIsOver = isOver
+      return tasks
     })
   }
 
   return (
-    <Box className="App" width='100%'>
-      <Stack>
-        {
-          taskOrder.map(taskId => {
-            const task = tasks[taskId]
+    <>
+      <AppBar>
+        <Toolbar>
+          <Typography variant='h4'>
+            Hi
+          </Typography>
+        </Toolbar>
+      </AppBar>
+      <Toolbar />
+      <Box
+        display="flex"
+        justifyContent="center"
+      >
+        <Stack >
+          {
+            taskOrder.map(taskId => {
+              const task = tasks[taskId]
+              const textSx = task.isComplete ? {textDecoration: 'line-through', color: 'gray'} : {}
 
-            return (
-              <Paper sx={{width: '400px', padding: 1}} key={taskId}>
-                <Stack direction='row' spacing={1}>
-                  <DragIndicator />
-                  <Typography width='100%'>
-                    {task.content}
+              return (
+                <Paper sx={{width: '400px', p: 1, m: 1}} key={taskId} onMouseEnter={() => handleMouseOver(taskId, true)} onMouseLeave={() => handleMouseOver(taskId, false)}>
+                  <Stack direction='row' spacing={1} alignItems='center'>
+                    <Checkbox checked={task.isComplete} onChange={event => handleCheckboxChange(event, taskId)} />
+                    <Typography width='100%' fontWeight={500} noWrap={true} sx={textSx}>
+                      {task.title}
+                    </Typography>
+                    {
+                      task.mouseIsOver &&
+                        <>
+                          <DragIndicator />
+                          <DeleteOutline />
+                        </>
+                    }
+                    
+                  </Stack>
+                  <Typography width='100%' sx={{...textSx, m: 1}}>
+                    {task.description}
                   </Typography>
-                </Stack>
-              </Paper>
-            )
-          })
-        }
-      </Stack>
-    </Box>
+                </Paper>
+              )
+            })
+          }
+        </Stack>
+      </Box>
+    </>
   )
 }
 
