@@ -1,8 +1,8 @@
-import { DeleteOutline, DragIndicator } from '@mui/icons-material'
-import { AppBar, Box, Checkbox, Paper, Stack, Toolbar, Typography } from '@mui/material'
+import { AppBar, Box, Stack, Toolbar, Typography } from '@mui/material'
 import { useState } from 'react'
 import './App.css'
 import { v4 as uuidv4 } from 'uuid';
+import TaskCard from './TaskCard';
 
 
 function App() {
@@ -12,33 +12,63 @@ function App() {
       isComplete: false,
       title: 'Take out the garbage',
       description: '',
-      mouseIsOver: false
     },
     '1': {
       id: '1',
       isComplete: false,
       title: 'Cook dinner',
       description: 'Before 8 PM',
-      mouseIsOver: false
     },
   })
 
   const [taskOrder, setTaskOrder] = useState(['0', '1'])
 
-  const handleCheckboxChange = (event, taskId) => {
-    const {checked} = event.target
-    
+  const [mouseIsOverId, setMouseIsOverId] = useState(undefined)
+
+  const [editingId, setEditingId] = useState(undefined)
+
+  const handleCheck = (event, taskId) => {
     setTasks(prevTasks => {
       const tasks = {...prevTasks}
-      tasks[taskId].isComplete = checked
+      tasks[taskId].isComplete = event.target.checked
       return tasks
     })
   }
 
-  const handleMouseOver = (taskId, isOver) => {
+  const handleMouseEnter = taskId => {
+    setMouseIsOverId(taskId)
+  }
+
+  const handleMouseLeave = taskId => {
+    if (taskId === mouseIsOverId) {
+      setMouseIsOverId(undefined)
+    }
+  }
+
+  const handleEditClick = taskId => {
+    setEditingId(taskId)
+  }
+
+  const handleDeleteClick = taskId => {
+    console.log('Delete Click')
+  }
+
+  const handleSaveClick = () => {
+    setEditingId(undefined)
+  }
+
+  const handleTitleChange = (event, taskId) => {
     setTasks(prevTasks => {
       const tasks = {...prevTasks}
-      tasks[taskId].mouseIsOver = isOver
+      tasks[taskId].title = event.target.value
+      return tasks
+    })
+  }
+
+  const handleDescriptionChange = (event, taskId) => {
+    setTasks(prevTasks => {
+      const tasks = {...prevTasks}
+      tasks[taskId].description = event.target.value
       return tasks
     })
   }
@@ -61,28 +91,25 @@ function App() {
           {
             taskOrder.map(taskId => {
               const task = tasks[taskId]
-              const textSx = task.isComplete ? {textDecoration: 'line-through', color: 'gray'} : {}
 
               return (
-                <Paper sx={{width: '400px', p: 1, m: 1}} key={taskId} onMouseEnter={() => handleMouseOver(taskId, true)} onMouseLeave={() => handleMouseOver(taskId, false)}>
-                  <Stack direction='row' spacing={1} alignItems='center'>
-                    <Checkbox checked={task.isComplete} onChange={event => handleCheckboxChange(event, taskId)} />
-                    <Typography width='100%' fontWeight={500} noWrap={true} sx={textSx}>
-                      {task.title}
-                    </Typography>
-                    {
-                      task.mouseIsOver &&
-                        <>
-                          <DragIndicator />
-                          <DeleteOutline />
-                        </>
-                    }
-                    
-                  </Stack>
-                  <Typography width='100%' sx={{...textSx, m: 1}}>
-                    {task.description}
-                  </Typography>
-                </Paper>
+                <TaskCard
+                  task={task}
+                  taskId={taskId}
+                  showButtons={editingId === undefined && taskId === mouseIsOverId}
+                  editMode={editingId === taskId}
+                  key={taskId}
+                  handleCheck={handleCheck}
+                  handleMouseEnter={handleMouseEnter}
+                  handleMouseLeave={handleMouseLeave}
+                  handleEditClick={handleEditClick}
+                  handleDeleteClick={handleDeleteClick}
+                  handleSaveClick={handleSaveClick}
+                  handleTitleChange={handleTitleChange}
+                  handleDescriptionChange={handleDescriptionChange}
+                >
+
+                </TaskCard>
               )
             })
           }
