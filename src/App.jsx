@@ -1,6 +1,5 @@
 import { AppBar, Box, Button, Stack, Toolbar, Typography } from '@mui/material'
 import { useState, useEffect } from 'react'
-import './App.css'
 import { v4 as uuidv4 } from 'uuid';
 import TaskCard from './TaskCard';
 import { Add } from '@mui/icons-material';
