@@ -1,37 +1,60 @@
 import { AppBar, Box, Button, Stack, Toolbar, Typography } from '@mui/material'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 import { v4 as uuidv4 } from 'uuid';
 import TaskCard from './TaskCard';
 import { Add } from '@mui/icons-material';
+import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 
+const LOCAL_STORAGE_KEY = "muiTaskApp"
 
 function App() {
-  const [tasks, setTasks] = useState({
-    '0': {
-      id: '0',
-      isCompleted: false,
-      title: 'Take out the garbage',
-      description: '',
-    },
-    '1': {
-      id: '1',
-      isCompleted: false,
-      title: 'Cook dinner',
-      description: 'Before 8 PM',
-    },
-  })
+  const [tasks, setTasks] = useState({})
 
-  const [taskOrder, setTaskOrder] = useState(['0', '1'])
+  const [taskOrder, setTaskOrder] = useState([])
 
   const [mouseIsOverTaskId, setMouseIsOverTaskId] = useState(undefined)
 
   const [editedTaskId, setEditedTaskId] = useState(undefined)
 
+  useEffect(() => {
+    if (taskOrder.length === 0) {
+      const storedData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY))
+
+      if (storedData) {
+        setTasks(() => storedData.tasks)
+        setTaskOrder(() => storedData.taskOrder)
+      } else {
+        setTasks(() => {
+          return {
+            '0': {
+              isCompleted: false,
+              title: 'Take out the garbage',
+              description: '',
+            },
+            '1': {
+              isCompleted: false,
+              title: 'Cook dinner',
+              description: 'Before 8 PM',
+            },
+          }
+        })
+        setTaskOrder(() => ['0', '1'])
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({
+      tasks: tasks,
+      taskOrder: taskOrder
+    }))
+  }, [tasks, taskOrder])
+
   const handleCheck = (event, taskId) => {
     setTasks(prevTasks => {
       const tasks = {...prevTasks}
-      tasks[taskId].isComplete = event.target.checked
+      tasks[taskId].isCompleted = event.target.checked
       return tasks
     })
   }
@@ -66,6 +89,10 @@ function App() {
     if (taskId === mouseIsOverTaskId) {
       setMouseIsOverTaskId(undefined)
     }
+
+    if (editedTaskId === taskId) {
+      setEditedTaskId(undefined)
+    }
   }
 
   const handleSaveClick = () => {
@@ -95,7 +122,6 @@ function App() {
       return {
         ...prevTasks,
         [taskId]: {
-          id: taskId,
           isCompleted: false,
           title: '',
           description: '',
@@ -111,53 +137,91 @@ function App() {
     setEditedTaskId(taskId)
   }
 
+  const onDragEnd = result => {
+    const { destination, source, draggableId } = result
+
+    if (!destination) {
+      return
+    }
+
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return
+    }
+
+    setTaskOrder(prevTaskOrder => {
+      const taskOrder = [...prevTaskOrder]
+      taskOrder.splice(source.index, 1)
+      taskOrder.splice(destination.index, 0, draggableId)
+      return taskOrder
+    })
+  }
+
   return (
     <>
       <AppBar>
         <Toolbar>
-          <Typography variant='h4'>
-            Hi
+          <Typography sx={{m: 'auto', fontSize: '1.5em', fontWeight: 700, fontFamily: 'Inter', letterSpacing: '-0.05em'}}>
+            MyTasks
           </Typography>
         </Toolbar>
       </AppBar>
       <Toolbar />
       <Box
-        display="flex"
-        justifyContent="center"
+        display='flex'
+        justifyContent='center'
       >
-        <Stack >
-          {
-            taskOrder.map((taskId, placeInColumn) => {
-              const task = tasks[taskId]
+        <Stack>
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId={'main'}>
+              {(provided) => (
+                <Stack
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                >
+                  {
+                    taskOrder.map((taskId, placeInColumn) => {
+                      const task = tasks[taskId]
 
-              return (
-                <TaskCard
-                  task={task}
-                  taskId={taskId}
-                  placeInColumn={placeInColumn}
-                  showButtons={editedTaskId === undefined && taskId === mouseIsOverTaskId}
-                  editMode={editedTaskId === taskId}
-                  key={taskId}
-                  handleCheck={handleCheck}
-                  handleMouseEnter={handleMouseEnter}
-                  handleMouseLeave={handleMouseLeave}
-                  handleEditClick={handleEditClick}
-                  handleDeleteClick={handleDeleteClick}
-                  handleSaveClick={handleSaveClick}
-                  handleTitleChange={handleTitleChange}
-                  handleDescriptionChange={handleDescriptionChange}
-                />
-              )
-            })
+                      return (
+                        <TaskCard
+                          key={taskId}
+                          task={task}
+                          taskId={taskId}
+                          placeInColumn={placeInColumn}
+                          showButtons={editedTaskId === undefined && taskId === mouseIsOverTaskId}
+                          editMode={editedTaskId === taskId}
+                          allowSaving={task.title !== ''}
+                          handleCheck={handleCheck}
+                          handleMouseEnter={handleMouseEnter}
+                          handleMouseLeave={handleMouseLeave}
+                          handleEditClick={handleEditClick}
+                          handleDeleteClick={handleDeleteClick}
+                          handleSaveClick={handleSaveClick}
+                          handleTitleChange={handleTitleChange}
+                          handleDescriptionChange={handleDescriptionChange}
+                        />
+                      )
+                    })
+                  }
+                  {provided.placeholder}
+                </Stack>
+              )}
+            </Droppable>
+          </DragDropContext>
+          {
+            editedTaskId === undefined &&
+              <Button
+                onClick={handleAddClick}
+                variant="contained"
+                startIcon={<Add />}
+                sx={{m: 1}}
+              >
+                New Task
+              </Button>
           }
-          <Button
-            onClick={handleAddClick}
-            variant="contained"
-            startIcon={<Add />}
-            sx={{m: 1}}
-          >
-            New Task
-          </Button>
         </Stack>
       </Box>
     </>

@@ -1,6 +1,7 @@
-import { Delete, DragIndicator, Edit, Save } from '@mui/icons-material'
+import { Delete, Edit, Save } from '@mui/icons-material'
 import { Checkbox, IconButton, Paper, Stack, TextField, Typography } from '@mui/material'
 import React from 'react'
+import { Draggable } from 'react-beautiful-dnd'
 
 export default function TaskCard({
   task,
@@ -8,6 +9,7 @@ export default function TaskCard({
   placeInColumn,
   showButtons,
   editMode,
+  allowSaving,
   handleCheck,
   handleMouseEnter,
   handleMouseLeave,
@@ -28,12 +30,11 @@ export default function TaskCard({
         {
           showButtons &&
             <>
-              <DragIndicator />
-              <Checkbox checked={task.isComplete} onChange={event => handleCheck(event, taskId)} />
-              <IconButton aria-label='edit' onClick={event => handleEditClick(taskId)}>
+              <Checkbox checked={task.isCompleted} onChange={event => handleCheck(event, taskId)} />
+              <IconButton aria-label='edit' onClick={() => handleEditClick(taskId)}>
                 <Edit />
               </IconButton>
-              <IconButton aria-label='delete' onClick={event => handleDeleteClick(taskId, placeInColumn)}>
+              <IconButton aria-label='delete' onClick={() => handleDeleteClick(taskId, placeInColumn)}>
                 <Delete />
               </IconButton>
             </>
@@ -42,7 +43,7 @@ export default function TaskCard({
       </Stack>
       {
         task.description !== '' &&
-          <Typography width='100%' sx={{...textStyle, m: 1}}>
+          <Typography width='100%' sx={{...textStyle, m: 1, mt: 0}}>
             {task.description}
           </Typography>
       }
@@ -51,15 +52,18 @@ export default function TaskCard({
 
   const editView = (
     <>
-      <Stack direction='row' spacing={1} alignItems='center'>
+      <Stack direction='row' spacing={0.5} alignItems='center'>
         <TextField
           onChange={event => handleTitleChange(event, taskId)}
           value={task.title}
           placeholder='Title'
-          sx={{width: '100%', mb: 1}}
+          sx={{width: '100%', mb: 1, mr: 0.5}}
         />
-        <IconButton aria-label='save' onClick={event => handleSaveClick()}>
+        <IconButton aria-label='save' disabled={!allowSaving} onClick={handleSaveClick}>
           <Save />
+        </IconButton>
+        <IconButton aria-label='delete' onClick={() => handleDeleteClick(taskId, placeInColumn)}>
+          <Delete />
         </IconButton>
       </Stack>
       <TextField
@@ -72,17 +76,28 @@ export default function TaskCard({
   )
 
   return (
-    <Paper
-      sx={{width: '400px', p: 1, m: 1}}
-      onMouseEnter={event => handleMouseEnter(taskId)}
-      onMouseLeave={event => handleMouseLeave(taskId)}
+    <Draggable
+      draggableId={taskId}
+      index={placeInColumn}
     >
-      {
-        editMode ?
-          editView
-        :
-          normalView
-      }
-    </Paper>
+      {(provided, snapshot) => (
+        <Paper
+          sx={{width: '400px', p: 1, m: 1}}
+          onMouseEnter={() => handleMouseEnter(taskId)}
+          onMouseLeave={() => handleMouseLeave(taskId)}
+          ref={provided.innerRef}
+          {...provided.draggableProps}
+          {...provided.dragHandleProps}
+          isdragging={'' + snapshot.isDragging}
+        >
+          {
+            editMode ?
+              editView
+            :
+              normalView
+          }
+        </Paper>
+      )}
+    </Draggable>
   )
 }
