@@ -5,6 +5,7 @@ import React from 'react'
 export default function TaskCard({
   task,
   taskId,
+  placeInColumn,
   showButtons,
   editMode,
   handleCheck,
@@ -16,7 +17,7 @@ export default function TaskCard({
   handleTitleChange,
   handleDescriptionChange,
 }) {
-  const textStyle = task.isComplete ? {textDecoration: 'line-through', color: 'gray'} : {}
+  const textStyle = task.isCompleted ? {textDecoration: 'line-through', color: 'gray'} : {}
 
   const normalView = (
     <>
@@ -32,7 +33,7 @@ export default function TaskCard({
               <IconButton aria-label='edit' onClick={event => handleEditClick(taskId)}>
                 <Edit />
               </IconButton>
-              <IconButton aria-label='delete' onClick={event => handleDeleteClick(taskId)}>
+              <IconButton aria-label='delete' onClick={event => handleDeleteClick(taskId, placeInColumn)}>
                 <Delete />
               </IconButton>
             </>

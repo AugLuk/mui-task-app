@@ -1,21 +1,22 @@
-import { AppBar, Box, Stack, Toolbar, Typography } from '@mui/material'
+import { AppBar, Box, Button, Stack, Toolbar, Typography } from '@mui/material'
 import { useState } from 'react'
 import './App.css'
 import { v4 as uuidv4 } from 'uuid';
 import TaskCard from './TaskCard';
+import { Add } from '@mui/icons-material';
 
 
 function App() {
   const [tasks, setTasks] = useState({
     '0': {
       id: '0',
-      isComplete: false,
+      isCompleted: false,
       title: 'Take out the garbage',
       description: '',
     },
     '1': {
       id: '1',
-      isComplete: false,
+      isCompleted: false,
       title: 'Cook dinner',
       description: 'Before 8 PM',
     },
@@ -23,9 +24,9 @@ function App() {
 
   const [taskOrder, setTaskOrder] = useState(['0', '1'])
 
-  const [mouseIsOverId, setMouseIsOverId] = useState(undefined)
+  const [mouseIsOverTaskId, setMouseIsOverTaskId] = useState(undefined)
 
-  const [editingId, setEditingId] = useState(undefined)
+  const [editedTaskId, setEditedTaskId] = useState(undefined)
 
   const handleCheck = (event, taskId) => {
     setTasks(prevTasks => {
@@ -36,25 +37,39 @@ function App() {
   }
 
   const handleMouseEnter = taskId => {
-    setMouseIsOverId(taskId)
+    setMouseIsOverTaskId(taskId)
   }
 
   const handleMouseLeave = taskId => {
-    if (taskId === mouseIsOverId) {
-      setMouseIsOverId(undefined)
+    if (taskId === mouseIsOverTaskId) {
+      setMouseIsOverTaskId(undefined)
     }
   }
 
   const handleEditClick = taskId => {
-    setEditingId(taskId)
+    setEditedTaskId(taskId)
   }
 
-  const handleDeleteClick = taskId => {
-    console.log('Delete Click')
+  const handleDeleteClick = (taskId, placeInColumn) => {
+    setTasks(prevTasks => {
+      const tasks = {...prevTasks}
+      delete tasks[taskId]
+      return tasks
+    })
+
+    setTaskOrder(prevTaskOrder => {
+      const taskOrder = [...prevTaskOrder]
+      taskOrder.splice(placeInColumn, 1) 
+      return taskOrder
+    })
+
+    if (taskId === mouseIsOverTaskId) {
+      setMouseIsOverTaskId(undefined)
+    }
   }
 
   const handleSaveClick = () => {
-    setEditingId(undefined)
+    setEditedTaskId(undefined)
   }
 
   const handleTitleChange = (event, taskId) => {
@@ -73,6 +88,29 @@ function App() {
     })
   }
 
+  const handleAddClick = () => {
+    const taskId = uuidv4()
+
+    setTasks(prevTasks => {
+      return {
+        ...prevTasks,
+        [taskId]: {
+          id: taskId,
+          isCompleted: false,
+          title: '',
+          description: '',
+        }
+      }
+    })
+
+    setTaskOrder(prevTaskOrder => [
+      ...prevTaskOrder,
+      taskId
+    ])
+
+    setEditedTaskId(taskId)
+  }
+
   return (
     <>
       <AppBar>
@@ -89,15 +127,16 @@ function App() {
       >
         <Stack >
           {
-            taskOrder.map(taskId => {
+            taskOrder.map((taskId, placeInColumn) => {
               const task = tasks[taskId]
 
               return (
                 <TaskCard
                   task={task}
                   taskId={taskId}
-                  showButtons={editingId === undefined && taskId === mouseIsOverId}
-                  editMode={editingId === taskId}
+                  placeInColumn={placeInColumn}
+                  showButtons={editedTaskId === undefined && taskId === mouseIsOverTaskId}
+                  editMode={editedTaskId === taskId}
                   key={taskId}
                   handleCheck={handleCheck}
                   handleMouseEnter={handleMouseEnter}
@@ -107,12 +146,18 @@ function App() {
                   handleSaveClick={handleSaveClick}
                   handleTitleChange={handleTitleChange}
                   handleDescriptionChange={handleDescriptionChange}
-                >
-
-                </TaskCard>
+                />
               )
             })
           }
+          <Button
+            onClick={handleAddClick}
+            variant="contained"
+            startIcon={<Add />}
+            sx={{m: 1}}
+          >
+            New Task
+          </Button>
         </Stack>
       </Box>
     </>
